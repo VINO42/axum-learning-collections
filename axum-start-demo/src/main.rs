@@ -1,7 +1,9 @@
 use axum::{
+    extract::Path,
     // handler::Handler,
     http::{StatusCode, Uri},
     routing::get,
+    Json,
     Router,
 };
 extern crate config;
@@ -11,7 +13,7 @@ extern crate serde;
 use log::info;
 use log4rs;
 mod response;
-// use response::ServiceResult;
+use response::ServiceResult;
 mod configs;
 use self::config::*;
 use configs::ApplicationConfig;
@@ -26,10 +28,9 @@ async fn main() {
     let addr = configs.server.addr;
     info!("Starting Server Address : {}", addr);
 
-
-
     let app = Router::new()
         .route("/hello", get(hello))
+        .route("/path/:id", get(path_get_req))
         .route("/test", get(test_get));
 
     axum::Server::bind(&addr.parse().unwrap())
@@ -52,4 +53,26 @@ async fn test_get() -> String {
 
 async fn global_fall_back(url: Uri) -> (StatusCode, String) {
     (StatusCode::INTERNAL_SERVER_ERROR, "未知路由：".to_string())
+}
+
+/**
+ * 从path中获取参数 响应自定义json
+ */
+async fn path_get_req(Path(id): Path<i32>) -> Json<ServiceResult<i32>> {
+   if  id == 0  {
+    let result1 = ServiceResult::illegal_argument(id);
+     return Json(result1);
+   }
+   if  id == 1  {
+    let result1 = ServiceResult::ok(id);
+     return Json(result1);
+   }
+   if  id == 2  {
+    let result1 = ServiceResult::error(-1);
+     return Json(result1);
+   }
+
+    let result = ServiceResult::new(200, "okMessage".to_string(), id);
+
+    Json(result)
 }

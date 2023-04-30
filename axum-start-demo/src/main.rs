@@ -3,8 +3,12 @@ use axum::{
     // handler::Handler,
     http::{StatusCode, Uri},
     routing::get,
+    routing::post,
     Json,
     Router,
+    extract::{
+        Query,Form
+    }
 };
 extern crate config;
 extern crate lazy_static;
@@ -17,6 +21,10 @@ use response::ServiceResult;
 mod configs;
 use self::config::*;
 use configs::ApplicationConfig;
+mod page;
+use page::PageRequest;
+mod domain;
+use domain::TempUser;
 
 #[tokio::main]
 async fn main() {
@@ -31,6 +39,9 @@ async fn main() {
     let app = Router::new()
         .route("/hello", get(hello))
         .route("/path/:id", get(path_get_req))
+        .route("/path/:id/:name", get(path_get_req2))
+        .route("/page", get(page_get))
+        .route("/form", post(form_req))
         .route("/test", get(test_get));
 
     axum::Server::bind(&addr.parse().unwrap())
@@ -76,3 +87,51 @@ async fn path_get_req(Path(id): Path<i32>) -> Json<ServiceResult<i32>> {
 
     Json(result)
 }
+/**
+ * 多个path 参数 用元祖方式获取
+ */
+async fn path_get_req2(Path((id,name)): Path<(i32, String )>) -> Json<ServiceResult<String>> {
+    if  id == 0  {
+     let result1 = ServiceResult::illegal_argument(name);
+      return Json(result1);
+    }
+    if  id == 1  {
+     let result1 = ServiceResult::ok(name);
+      return Json(result1);
+    }
+    if  id == 2  {
+     let result1 = ServiceResult::error("".to_string());
+      return Json(result1);
+    }
+ 
+     let result = ServiceResult::new(200, "okMessage".to_string(), name);
+ 
+     Json(result)
+ }
+ /**
+  * get url 请求
+  */
+  async fn page_get(Query(args): Query<PageRequest>) -> Json<ServiceResult<i32>> {
+
+    let current= args.current.unwrap_or(0);
+    info!("current:{}",current);
+
+   let paget_size=args.page_size.unwrap_or(10);
+
+   let result = ServiceResult::new(200, "okMessage".to_string(), paget_size);
+ 
+     Json(result)
+
+  }
+ /**
+  * 表单请求
+  */
+  async fn form_req(Form(frm): Form<TempUser>) -> Json<TempUser> {
+ 
+ 
+   let result = TempUser::new(
+    frm.age, frm.name);
+ 
+     Json(result)
+
+  }

@@ -11,7 +11,7 @@ pub struct ServiceResult<T> {
     pub response_time: String,
 }
 
-impl< T> ServiceResult<T> {
+impl<T> ServiceResult<T> {
     pub fn new(status: usize, message: String, data: T) -> ServiceResult<T> {
         let now: DateTime<Local> = Local::now();
         let str_time = now.format("%Y-%m-%d %H:%M:%S.%s").to_string();

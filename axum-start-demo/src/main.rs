@@ -1,4 +1,5 @@
 use axum::{
+    http::HeaderMap,
     extract::Path,
     // handler::Handler,
     http::{StatusCode, Uri},
@@ -13,7 +14,7 @@ use axum::{
 extern crate config;
 extern crate lazy_static;
 extern crate serde;
-// use chrono::prelude::*;
+ // use chrono::prelude::*;
 use log::info;
 use log4rs;
 mod response;
@@ -25,6 +26,7 @@ mod page;
 use page::PageRequest;
 mod domain;
 use domain::TempUser;
+use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() {
@@ -42,6 +44,7 @@ async fn main() {
         .route("/path/:id/:name", get(path_get_req2))
         .route("/page", get(page_get))
         .route("/form", post(form_req))
+        .route("/headers", get(get_headers))
         .route("/test", get(test_get));
 
     axum::Server::bind(&addr.parse().unwrap())
@@ -134,4 +137,15 @@ async fn path_get_req2(Path((id,name)): Path<(i32, String )>) -> Json<ServiceRes
  
      Json(result)
 
+  }
+  async fn get_headers(headers:HeaderMap) ->Json<HashMap<String,String>> {
+    let mut  result:HashMap<String,String>=HashMap::new();
+    headers.keys().for_each(|key|{
+     info!("key:{}",key);
+   let value=  headers.get(key).unwrap().to_str().unwrap().to_string();
+     info!("value:{}",value);
+     result.insert(key.clone().to_string(), value);
+    }   );
+  
+        Json(result)
   }

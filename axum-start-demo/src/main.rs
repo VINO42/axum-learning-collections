@@ -8,7 +8,13 @@ use axum::{
     routing::post,
     Json,
     Router,
+    extract::Extension,
 };
+mod redis_module;
+use redis_module::*;
+use serde::de::DeserializeOwned;
+use redis::{AsyncCommands,Client,Connection};
+use serde::{ Serialize};
 
 extern crate config;
 extern crate lazy_static;
@@ -26,6 +32,7 @@ use page::PageRequest;
 mod domain;
 use domain::TempUser;
 use std::collections::HashMap;
+use serde_json::{from_str, json};
 
 const COOKIE_NAME: &'static str = "token";
 
@@ -52,6 +59,7 @@ async fn main() {
         .route("/resp_text", get(resp_text))
         .route("/resp_status", get(resp_status))
         .route("/handler_cookie", post(handler_cookie))
+        .route("/redis_test", get(redis_test))
         .route("/test", get(test_get));
 
     axum::Server::bind(&addr.parse().unwrap())
@@ -246,3 +254,23 @@ async fn handler_cookie(headers: HeaderMap) -> ( HeaderMap,&'static str) {
     return (headers,"ok");
 
  } 
+
+ /**
+  * redis 存储 获取
+  */
+  const REDIS_DSN: &str = "redis://127.0.0.1:6379/";
+
+  async fn redis_test() -> Result<String, String> {
+    let client = Client::open(REDIS_DSN).map_err(|err| err.to_string())?;
+
+    let mut conn = client
+    .get_async_connection()
+    .await
+    .map_err(|err| err.to_string())?;
+conn.set("name", "axum").await.map_err(|err| err.to_string())?;
+    info!("set name :{}","axum");
+    let value = conn.get("name").await.map_err(|err| err.to_string())?;
+    info!("get name :{}",value);
+
+    Ok(value)
+  }

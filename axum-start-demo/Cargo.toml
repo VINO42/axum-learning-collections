@@ -22,4 +22,5 @@ config = "0.11.0"
 dotenv = "0.15.0"
 envy = "0.4.2"
 lazy_static = "1.4.0"
- 
+ #redis
+ redis = { version = "0.23", features = ["tokio-comp", "aio"] }
